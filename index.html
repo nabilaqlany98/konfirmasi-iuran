@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Konfirmasi Iuran</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    :root {
+      --bg: #fff8eb;
+      --bg-dots: #f3e5c8;
+      --card: #ffffff;
+      --text: #18181b;
+      --muted: #6b665c;
+      --border: #18181b;
+      --soft: #fffdf9;
+      --accent: #ffbe0b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background-color: var(--bg);
+      background-image: radial-gradient(var(--bg-dots) 1.5px, transparent 1.5px);
+      background-size: 18px 18px;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 28px 16px;
+      line-height: 1.5;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 460px;
+      background: var(--card);
+      border: 2.5px solid var(--border);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 7px 7px 0px var(--border);
+    }
+
+    .header {
+      padding-bottom: 16px;
+      border-bottom: 2px dashed #d6cfc2;
+    }
+
+    .header h2 {
+      margin: 0 0 4px;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .header p {
+      margin: 0;
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+
+    .field {
+      margin-top: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .hint {
+      font-weight: 500;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 11px 14px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--soft);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+
+    input[type="text"]:focus {
+      background: #ffffff;
+      box-shadow: 3px 3px 0px var(--accent);
+      transform: translate(-1px, -1px);
+    }
+
+    .upload-box {
+      border: 2px dashed var(--border);
+      background: var(--soft);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      transition: background 0.15s ease, transform 0.12s ease;
+    }
+
+    .upload-box:hover {
+      background: #fff3d6;
+      transform: translateY(-1px);
+    }
+
+    .upload-box input[type="file"] {
+      width: 100%;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #preview {
+      width: 100%;
+      max-height: 270px;
+      object-fit: contain;
+      margin-top: 14px;
+      display: none;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--soft);
+      padding: 6px;
+    }
+
+    .status-baca {
+      margin: 10px 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      min-height: 18px;
+    }
+
+    .panel {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #fff9ec;
+      border: 2px solid var(--border);
+      box-shadow: 4px 4px 0px var(--border);
+    }
+
+    button {
+      margin-top: 14px;
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      background: var(--accent);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 4px 4px 0px var(--border);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background: #ffd13b;
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0px var(--border);
+    }
+
+    button:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px var(--border);
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.96) translateY(6px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .hasil-box {
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 18px;
+      background: #e9fbe7;
+      border: 2.5px solid var(--border);
+      box-shadow: 5px 5px 0px var(--border);
+      animation: popIn 0.25s ease-out;
+    }
+
+    .hasil-box.mode-kecil {
+      background: #fff0f0;
+    }
+
+    .hasil-box.mode-nanggung {
+      background: #fff7db;
+    }
+
+    .hasil-box.mode-sultan {
+      background: #e6f4ff;
+    }
+
+    .reaksi-tag {
+      display: inline-block;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: #ffffff;
+      margin-bottom: 10px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .meta-row span:last-child {
+      font-weight: 700;
+      color: var(--text);
+      text-align: right;
+    }
+
+    .pesan {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 2px solid var(--border);
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text);
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Konfirmasi Iuran</h2>
+      <p>Isi nama donatur, validasi nominal sumbangan, dan kirim.</p>
+    </div>
+
+    <div class="field">
+      <label for="nama">Siapakah donatur kita hari ini? <span class="hint">(opsional)</span></label>
+      <input type="text" id="nama" placeholder="Contoh: Nabil Ganteng" />
+    </div>
+
+    <div class="field">
+      <label for="bukti">Bukti Transfer</label>
+      <div class="upload-box">
+        <input type="file" id="bukti" accept="image/*" />
+      </div>
+      <img id="preview" alt="Preview bukti transfer" />
+      <p class="status-baca" id="statusBaca"></p>
+    </div>
+
+    <div class="panel" id="panelNominal" style="display:none;">
+      <label for="nominal">Nominal Terbaca (Rp) <span class="hint">— boleh diubah jika tidak sesuai</span></label>
+      <input type="text" id="nominal" inputmode="numeric" placeholder="Contoh: 30000 atau 30.000" />
+      <button type="button" id="kirimBtn">Kirim &amp; Lihat Vonis</button>
+    </div>
+
+    <div class="hasil-box" id="hasilBox" style="display:none;">
+      <div class="reaksi-tag" id="reaksiTag">✨ Hasil Konfirmasi</div>
+      <div class="meta-row">
+        <span>Nominal diproses</span>
+        <span>Rp<span id="nominalDiproses">0</span></span>
+      </div>
+      <div class="meta-row">
+        <span>Status</span>
+        <span id="statusKirim">-</span>
+      </div>
+      <div class="pesan" id="pesanBalasan"></div>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwDAT7yWlR8jdBOGUEvaEkehhfSvZ7YotUNEdETQrjiGL4oLFvdPW2esDybyFX8afj_/exec";
+
+    const KATEGORI_NAMA = {
+      nabil: "ganteng",
+      radit: "ganteng",
+      ahza: "ganteng",
+      zaskia: "cantik",
+      khayla: "cantik",
+      arina: "cantik",
+      annisa: "cantik",
+      faros: "cantik",
+      rafi: "ganteng",
+      fahmi: "ganteng"
+    };
+
+    const buktiInput = document.getElementById("bukti");
+    const preview = document.getElementById("preview");
+    const statusBaca = document.getElementById("statusBaca");
+    const panelNominal = document.getElementById("panelNominal");
+    const nominalInput = document.getElementById("nominal");
+    const kirimBtn = document.getElementById("kirimBtn");
+    const hasilBox = document.getElementById("hasilBox");
+    const reaksiTag = document.getElementById("reaksiTag");
+    const nominalDiproses = document.getElementById("nominalDiproses");
+    const statusKirim = document.getElementById("statusKirim");
+    const pesanBalasan = document.getElementById("pesanBalasan");
+
+    let imageBase64 = "";
+
+    function bersihkanNominal(nilai) {
+      const hanyaAngka = String(nilai || "").replace(/[^\d]/g, "");
+      return hanyaAngka ? Number(hanyaAngka) : 0;
+    }
+
+    function ekstrakAngkaBaris(baris) {
+      const regex = /(?:Rp\.?|IDR)?\s*(\d{1,3}(?:[.,]\d{3})+|\b\d{4,7}\b)/gi;
+      const hasil = [];
+      let match;
+      while ((match = regex.exec(baris)) !== null) {
+        const raw = match[1];
+        const nilai = bersihkanNominal(raw);
+        if (nilai >= 1000 && nilai <= 10000000) {
+          hasil.push({ nilai, adaRp: /rp|idr/i.test(match[0]) });
+        }
+      }
+      return hasil;
+    }
+
+    function deteksiNominalPresisi(teks) {
+      const lines = String(teks || "")
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(Boolean);
+
+      const kataPositif = /(nominal|jumlah|total|transfer|bayar|kirim|rp\b|idr\b)/i;
+      const kataNegatif = /(saldo|ref|referensi|resi|struk|rek|rekening|va\b|virtual|admin|biaya|fee|sn\b|kode|jam|tgl|tanggal|pukul)/i;
+
+      let kandidatTerbaik = { nilai: 0, skor: -999 };
+
+      for (let i = 0; i < lines.length; i++) {
+        const barisIni = lines[i];
+        const barisSebelumnya = i > 0 ? lines[i - 1] : "";
+        const konteks = `${barisSebelumnya} ${barisIni}`;
+
+        const angkaDiBaris = ekstrakAngkaBaris(barisIni);
+        for (const item of angkaDiBaris) {
+          let skor = 0;
+
+          if (item.adaRp) skor += 4;
+          if (kataPositif.test(barisIni)) skor += 6;
+          else if (kataPositif.test(barisSebelumnya)) skor += 4;
+
+          if (kataNegatif.test(barisIni)) skor -= 10;
+          if (kataNegatif.test(konteks)) skor -= 4;
+
+          if (item.nilai >= 10000 && item.nilai <= 200000) skor += 2;
+          if (item.nilai % 1000 === 0) skor += 1;
+
+          if (
+            skor > kandidatTerbaik.skor ||
+            (skor === kandidatTerbaik.skor && item.nilai > kandidatTerbaik.nilai)
+          ) {
+            kandidatTerbaik = { nilai: item.nilai, skor };
+          }
+        }
+      }
+
+      return kandidatTerbaik.skor > -999 ? kandidatTerbaik.nilai : 0;
+    }
+
+    function deteksiPanggilan(namaBersih) {
+      const tokens = namaBersih
+        .split(/\s+/)
+        .map(t => t.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, ""))
+        .filter(Boolean);
+
+      for (const token of tokens) {
+        const kunci = token.toLowerCase();
+        if (Object.prototype.hasOwnProperty.call(KATEGORI_NAMA, kunci)) {
+          return {
+            panggilan: token,
+            kategori: KATEGORI_NAMA[kunci]
+          };
+        }
+      }
+      return null;
+    }
+
+    function tentukanPesan(nominal, namaInput = "") {
+      if (nominal === 10000) return "MIKIR KIDS!";
+      if (nominal === 20000) return "dolar aja 18rb, masa beda dikit";
+      if (nominal === 30000) return "naikin lagi lah, tapi OK";
+      if (nominal === 40000) return "nanggung gak sih kakak ganteng/cantik";
+      if (nominal === 50000) return "nah gitu dong";
+      if (nominal > 50000) {
+        return (
+          "terimakasih orang baik, semoga sehat selalu,\n" +
+          "dilancarkan rezekinya, dibesarkan IPK-nya, jadi kebanggan\n" +
+          "keluarga, nusa, dan bangsa"
+        );
+      }
+
+      const namaBersih = String(namaInput || "").trim();
+      if (!namaBersih) return "makasih ya sudah nyumbang";
+
+      const cocok = deteksiPanggilan(namaBersih);
+      if (cocok) {
+        return `makasih ya ${cocok.panggilan} ${cocok.kategori} sudah nyumbang`;
+      }
+      return `makasih ya ${namaBersih} sudah nyumbang`;
+    }
+
+    function terapkanTemaHasil(nominal) {
+      hasilBox.classList.remove("mode-kecil", "mode-nanggung", "mode-sultan");
+      if (nominal <= 20000) {
+        hasilBox.classList.add("mode-kecil");
+        reaksiTag.textContent = "👀 Hmm... dipantau";
+      } else if (nominal === 40000) {
+        hasilBox.classList.add("mode-nanggung");
+        reaksiTag.textContent = "🤔 Nanggung detected";
+      } else if (nominal > 50000) {
+        hasilBox.classList.add("mode-sultan");
+        reaksiTag.textContent = "👑 Kelas orang baik";
+      } else {
+        reaksiTag.textContent = "✅ Diterima";
+      }
+    }
+
+    buktiInput.addEventListener("change", async () => {
+      const file = buktiInput.files[0];
+      if (!file) return;
+
+      hasilBox.style.display = "none";
+      statusBaca.textContent = "🔍 Lagi menerawang angka di struk...";
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        imageBase64 = e.target.result;
+        preview.src = imageBase64;
+        preview.style.display = "block";
+
+        try {
+          const result = await Tesseract.recognize(imageBase64, "eng");
+          const terdeteksi = deteksiNominalPresisi(result.data.text || "");
+          nominalInput.value = terdeteksi > 0 ? terdeteksi.toLocaleString("id-ID") : "";
+          panelNominal.style.display = "block";
+          statusBaca.textContent = terdeteksi > 0
+            ? `🎯 Ketemu: Rp${terdeteksi.toLocaleString("id-ID")}`
+            : "😅 Angkanya sembunyi, ketik manual aja ya.";
+        } catch (err) {
+          panelNominal.style.display = "block";
+          statusBaca.textContent = "😅 Gagal baca otomatis, ketik manual aja ya.";
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    kirimBtn.addEventListener("click", async () => {
+      const namaMentah = document.getElementById("nama").value.trim();
+      const nama = namaMentah || "Tanpa Nama";
+      const nominal = bersihkanNominal(nominalInput.value);
+      const pesan = tentukanPesan(nominal, namaMentah);
+
+      kirimBtn.disabled = true;
+      kirimBtn.textContent = "Mengirim...";
+      nominalDiproses.textContent = nominal.toLocaleString("id-ID");
+      pesanBalasan.textContent = pesan;
+      statusKirim.textContent = "Mengirim bukti...";
+      terapkanTemaHasil(nominal);
+      hasilBox.style.display = "block";
+
+      try {
+        await fetch(WEB_APP_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ nama, nominal, pesan, imageBase64 })
+        });
+        statusKirim.textContent = "Bukti berhasil dikirim.";
+      } catch (err) {
+        statusKirim.textContent = "Gagal mengirim ke server (" + err.message + ").";
+      } finally {
+        kirimBtn.disabled = false;
+        kirimBtn.textContent = "Kirim & Lihat Vonis";
+      }
+    });
+  </script>
+</body>
+</html>
